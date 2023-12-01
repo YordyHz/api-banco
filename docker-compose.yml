@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+
+  devsu_db:
+    container_name: devsu_db
+    image: postgres:14
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "5432", "-U", "postgres", "-d", "postgres"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  cliente_service:
+    container_name: cliente_service
+    image: devsu-cliente_service:1.0.0
+    build: ./cliente_service
+    ports:
+      - 8090:8080
+    environment:
+      - DATABASE_URL=jdbc:postgresql://devsu_db:5432/postgres
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+    depends_on:
+      - devsu_db
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8090/actuator/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  cuenta_service:
+    container_name: cuenta_service
+    image: devsu-cuenta_service:1.0.0
+    build: ./cuenta_service
+    ports:
+      - 8091:8080
+    environment:
+      - DATABASE_URL=jdbc:postgresql://devsu_db:5432/postgres
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+    depends_on:
+      - devsu_db
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8091/actuator/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+  
